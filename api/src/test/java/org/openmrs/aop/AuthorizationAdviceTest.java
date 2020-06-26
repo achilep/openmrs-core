@@ -16,6 +16,7 @@ package org.openmrs.aop;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertThrows;
 
 import javax.annotation.Resource;
 import java.util.LinkedHashSet;
@@ -50,9 +51,8 @@ public class AuthorizationAdviceTest extends BaseContextSensitiveTest {
 		
 		listener2.hasPrivileges.clear();
 		listener2.lacksPrivileges.clear();
-		
+
 		Concept concept = Context.getConceptService().getConcept(3);
-		
 		assertThat("listener1", listener1.hasPrivileges, containsInAnyOrder(PrivilegeConstants.GET_CONCEPTS));
 		assertThat("listener2", listener2.hasPrivileges, containsInAnyOrder(PrivilegeConstants.GET_CONCEPTS));
 		assertThat(listener1.lacksPrivileges, empty());
@@ -60,7 +60,7 @@ public class AuthorizationAdviceTest extends BaseContextSensitiveTest {
 		
 		listener1.hasPrivileges.clear();
 		listener2.hasPrivileges.clear();
-		
+
 		Context.getConceptService().saveConcept(concept);
 		
 		String[] privileges = { PrivilegeConstants.MANAGE_CONCEPTS, PrivilegeConstants.GET_OBS,
@@ -91,10 +91,10 @@ public class AuthorizationAdviceTest extends BaseContextSensitiveTest {
 	@Component("listener2")
 	public static class Listener2 extends Listener1 {}
 	
-	@Test(expected = APIAuthenticationException.class)
+	@Test
 	public void before_shouldThrowAPIAuthenticationException() {
 		Context.getUserContext().logout();
-		Context.getConceptService().getConcept(3);
+		assertThrows(APIAuthenticationException.class, () -> Context.getConceptService().getConcept(3));
 	}
 	
 }

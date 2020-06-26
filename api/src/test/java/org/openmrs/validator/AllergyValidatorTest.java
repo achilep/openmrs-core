@@ -12,15 +12,14 @@ package org.openmrs.validator;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -46,8 +45,6 @@ import org.springframework.validation.Errors;
 @PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*", "org.w3c.dom.*"})
 public class AllergyValidatorTest {
 	
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
 	
 	private Allergy allergy;
 	
@@ -86,9 +83,8 @@ public class AllergyValidatorTest {
 	@Test
 	public void validate_shouldFailForANullValue() {
 		
-		expectedException.expect(IllegalArgumentException.class);
-		expectedException.expectMessage("Allergy should not be null");
-		validator.validate(null, errors);
+	    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> validator.validate(null, errors));
+		assertThat(exception.getMessage(), is("Allergy should not be null"));
 	}
 	
 	/**

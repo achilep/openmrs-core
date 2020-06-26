@@ -12,6 +12,7 @@ package org.openmrs.module;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThrows;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -29,7 +30,6 @@ import java.util.zip.ZipEntry;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.openmrs.api.context.Context;
 import org.openmrs.messagesource.MessageSourceService;
@@ -53,8 +53,6 @@ public class ModuleFileParserTest extends BaseContextSensitiveTest {
 
 	private static DocumentBuilder documentBuilder;
 
-	@Rule
-	public ExpectedException expectedException = ExpectedException.none();
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -71,17 +69,15 @@ public class ModuleFileParserTest extends BaseContextSensitiveTest {
 	@Test
 	public void moduleFileParser_shouldFailCreatingParserFromFileIfGivenNull() {
 
-		expectModuleExceptionWithTranslatedMessage("Module.error.fileCannotBeNull");
-
-		new ModuleFileParser((File) null);
+		ModuleException exception = assertThrows(ModuleException.class, () -> new ModuleFileParser((File) null));
+		assertThat(exception.getMessage(), is(messageSourceService.getMessage("Module.error.fileCannotBeNull")));
 	}
 
 	@Test
 	public void moduleFileParser_shouldFailCreatingParserFromFileIfNotEndingInOmod() {
 
-		expectModuleExceptionWithTranslatedMessage("Module.error.invalidFileExtension");
-
-		new ModuleFileParser(new File("reporting.jar"));
+		ModuleException exception = assertThrows(ModuleException.class, () -> new ModuleFileParser(new File("reporting.jar")));
+		assertThat(exception.getMessage(), is("Module file does not have the correct '.omod' file extension Module: reporting.jar"));
 	}
 
 	@Test
@@ -92,9 +88,8 @@ public class ModuleFileParserTest extends BaseContextSensitiveTest {
 		InputStream inputStream = new FileInputStream(moduleFile);
 		inputStream.close();
 
-		expectModuleExceptionWithTranslatedMessage("Module.error.cannotCreateFile");
-
-		new ModuleFileParser(inputStream);
+		ModuleException exception = assertThrows(ModuleException.class, () -> new ModuleFileParser(inputStream));
+		assertThat(exception.getMessage(), is(messageSourceService.getMessage("Module.error.cannotCreateFile")));
 	}
 
 	@Test
@@ -128,8 +123,7 @@ public class ModuleFileParserTest extends BaseContextSensitiveTest {
 		String invalidConfigVersion = "0.0.1";
 		String expectedMessage = messageSourceService
 			.getMessage("Module.error.invalidConfigVersion",
-				new Object[] { invalidConfigVersion, "1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6" }, Context.getLocale());
-		expectModuleExceptionWithMessage(expectedMessage);
+				new Object[] { invalidConfigVersion, "1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6 Module: modulefileparsertest.omod" }, Context.getLocale());
 
 		Document configXml = documentBuilder.newDocument();
 		Element root = configXml.createElement("module");
@@ -137,8 +131,8 @@ public class ModuleFileParserTest extends BaseContextSensitiveTest {
 		configXml.getDocumentElement().setAttribute("configVersion", invalidConfigVersion);
 
 		ModuleFileParser parser = new ModuleFileParser(writeConfigXmlToFile(configXml));
-
-		parser.parse();
+		ModuleException exception = assertThrows(ModuleException.class, () -> parser.parse());
+		assertThat(exception.getMessage(), is(expectedMessage));
 	}
 
 	@Test
@@ -157,17 +151,17 @@ public class ModuleFileParserTest extends BaseContextSensitiveTest {
 		assertThat(module.getMappingFiles(), hasItems("LogicRuleToken.hbm.xml"));
 	}
 
-	private void expectModuleExceptionWithTranslatedMessage(String s) {
+	/*private void expectModuleExceptionWit hTranslatedMessage(String s) {
 		String expectedMessage = messageSourceService.getMessage(s);
 		expectModuleExceptionWithMessage(expectedMessage);
 	}
 
-	private void expectModuleExceptionWithMessage(String s) {
+	private void expectModuleExceptionWi thMessage(String s) {
 		String expectedMessage = messageSourceService.getMessage(s);
 		expectedException.expect(ModuleException.class);
 		expectedException.expectMessage(expectedMessage);
 	}
-
+*/
 	private File writeConfigXmlToFile(Document config) throws IOException {
 		File file = temporaryFolder.newFile("modulefileparsertest.omod");
 		JarOutputStream jar = createJarWithConfigXmlEntry(file);
